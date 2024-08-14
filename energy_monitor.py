@@ -35,7 +35,7 @@ dash.clientside_callback(
 
 
 def _fetch_data(query: str) -> pd.DataFrame:
-    with sqlite3.connect("energy_data.db") as conn:
+    with sqlite3.connect("data/energy_data.db") as conn:
         df = pd.read_sql(query, conn, parse_dates=["timestamp"])
     return df
 

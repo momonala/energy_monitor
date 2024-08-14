@@ -1,0 +1,28 @@
+*.session
+*.ipynb
+values.py
+
+# Compiled source #
+__pycache__/
+.cache/
+.ipython/
+.jupyter/
+.local/
+
+# Project Files
+*.py[cod]
+*$py.class
+.ipynb*
+venv/
+.vscode
+*.egg-info/
+tmp/
+dump.rdb
+.coverage
+reports/
+*/.hypothesis/**
+.idea/**
+
+# OS files
+.DS_Store
+

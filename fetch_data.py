@@ -4,15 +4,15 @@ import sqlite3
 import pandas as pd
 import paho.mqtt.client as mqtt
 
-from utils import print_value
+from utils import print_value, running_on_raspberry_pi
 
-MQTT_BROKER = "192.168.0.183"
+MQTT_BROKER = "localhost" if running_on_raspberry_pi() else "192.168.0.183"
 MQTT_PORT = 1883
 MQTT_TOPIC = "home/energy_monitor"
 
 cost_per_kWh = 0.30
 
-DATABASE_FILE = "energy_data.db"
+DATABASE_FILE = "data/energy_data.db"
 TABLE_NAME = "energy_measurements"
 
 
