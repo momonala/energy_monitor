@@ -165,7 +165,7 @@ def update_latest_values(n_intervals):
     [Input("interval-graph", "n_intervals"), Input("minutes-input", "value")],
 )
 def update_graphs(n_intervals, minutes):
-    max_points_to_show = 9000
+    max_points_to_show = 1000
     rolling_window_size = 10
 
     # Ensure minutes is a positive integer
@@ -227,4 +227,4 @@ def update_graphs(n_intervals, minutes):
 
 if __name__ == "__main__":
     app.enable_dev_tools(dev_tools_ui=True, dev_tools_serve_dev_bundles=True)
-    app.run_server(debug=True, port=8050)
+    app.run_server(debug=True, host='0.0.0.0', port=8050)
