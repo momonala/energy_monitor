@@ -65,8 +65,8 @@ def on_message(client, userdata, msg):
                 df.to_sql(TABLE_NAME, conn, if_exists="append", index=False)
         except sqlite3.Error as e:
             print(f"Failed to write to database: {e}")
-    except json.JSONDecodeError as e:
-        print(f"Failed to decode JSON message: {e}")
+    except (json.JSONDecodeError, UnicodeDecodeError) as e:
+        print(f"Failed to decode JSON message: {e}\n{msg.payload}")
 
 
 create_table()
