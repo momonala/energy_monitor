@@ -1,10 +1,15 @@
 import json
-import time
+import logging
 import sqlite3
-import pandas as pd
-import paho.mqtt.client as mqtt
+import time
 
-from utils import print_value, running_on_raspberry_pi
+import paho.mqtt.client as mqtt
+import pandas as pd
+
+from utils import print_value, running_on_raspberry_pi, TABLE_NAME, DATABASE_FILE
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s:%(levelname)s: %(message)s")
+logger = logging.getLogger(__name__)
 
 MQTT_BROKER = "localhost" if running_on_raspberry_pi() else "192.168.0.183"
 MQTT_PORT = 1883
@@ -12,31 +17,36 @@ MQTT_TOPIC = "home/energy_monitor"
 
 cost_per_kWh = 0.30
 
-DATABASE_FILE = "data/energy_data.db"
-TABLE_NAME = "energy_measurements"
-
 
 def create_table():
+    create_table_cmd = f"""
+CREATE TABLE IF NOT EXISTS {TABLE_NAME} (
+    timestamp TEXT,
+    voltage REAL,
+    current REAL,
+    power REAL,
+    energy REAL,
+    frequency REAL,
+    pf REAL,
+    cost REAL
+)
+"""
+    create_index_cmd = f"CREATE INDEX IF NOT EXISTS idx_timestamp ON {TABLE_NAME} (timestamp);"
+
     conn = sqlite3.connect(DATABASE_FILE)
     cursor = conn.cursor()
-    cursor.execute(f"""
-        CREATE TABLE IF NOT EXISTS {TABLE_NAME} (
-            timestamp TEXT,
-            voltage REAL,
-            current REAL,
-            power REAL,
-            energy REAL,
-            frequency REAL,
-            pf REAL,
-            cost REAL
-        )
-    """)
+
+    cursor.execute(create_table_cmd)
+    logger.info(f"Executed {create_table_cmd}")
+    cursor.execute(create_index_cmd)
+    print(f"Executed {create_index_cmd}")
+
     conn.commit()
     conn.close()
 
 
 def on_connect(client, userdata, flags, reason_code, properties):
-    print(f"MQTT connected with {reason_code=}")
+    logger.info(f"MQTT connected with {reason_code=}")
     client.subscribe(MQTT_TOPIC)
     time.sleep(1)
 
@@ -64,9 +74,9 @@ def on_message(client, userdata, msg):
             with sqlite3.connect(DATABASE_FILE) as conn:
                 df.to_sql(TABLE_NAME, conn, if_exists="append", index=False)
         except sqlite3.Error as e:
-            print(f"Failed to write to database: {e}")
+            logger.info(f"Failed to write to database: {e}")
     except (json.JSONDecodeError, UnicodeDecodeError) as e:
-        print(f"Failed to decode JSON message: {e}\n{msg.payload}")
+        logger.info(f"Failed to decode JSON message: {e}\n{msg.payload}")
 
 
 create_table()

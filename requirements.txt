@@ -5,3 +5,4 @@ paho_mqtt>=2.1.0
 pandas>=2.2.2
 plotly>=5.23.0
 dash-bootstrap-components>=1.6.0
+sqlalchemy>=2.0.32
