@@ -3,7 +3,6 @@
 #include <SoftwareSerial.h>
 #include <PubSubClient.h>
 #include <Wire.h>
-//#include <LiquidCrystal_I2C.h>
 #include "ESP8266WiFi.h"
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
@@ -24,7 +23,6 @@ const char* mqtt_server = "192.168.0.183";
 const int mqtt_port = 1883;
 const char* mqtt_topic = "home/energy_monitor";
 
-//LiquidCrystal_I2C lcd(0x27, 16, 2);
 #define OLED_RESET     -1 // Reset pin # (or -1 if sharing Arduino reset pin)
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
@@ -38,25 +36,22 @@ WiFiClient wifiClient;
 PubSubClient mqttClient(wifiClient);
 
 float ENERGY_COST = 0.30; // euro per kWh
-String lcdString;;
+String displayString;
 
 void setup() {
+   // Initialize OLED
   if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) { // Address 0x3D for 128x64
     Serial.println(F("SSD1306 allocation failed"));
     for(;;);
   }
   display.setRotation(2);
   display.clearDisplay();
-
   display.setTextSize(1);
   display.setTextColor(WHITE);
   display.setCursor(0, 0);
-
-  display.println("Hello, world!");
+  display.print("Booting up...");
   display.display(); 
-  
-//  lcd.init();
-//  lcd.backlight();
+  delay(200);
   
   pinMode(LED_BUILTIN_OVERRIDE, OUTPUT);
   digitalWrite(LED_BUILTIN_OVERRIDE, HIGH);
@@ -68,17 +63,20 @@ void setup() {
   // Connect to WiFi
   WiFi.begin(ssid, password);
   Serial.println("Connecting to WiFi");
-//  lcd.clear();
-//  lcd.setCursor(0, 0);
-//  lcd.print("Connect WiFi");
+  display.clearDisplay();
+  display.setCursor(0, 0);
+  display.print("Connect WiFi");
+  display.display(); 
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");
-//    lcd.print(".");
+    display.print(".");
+    display.display(); 
   }
   Serial.println("Connected to WiFi!");
-//  lcd.setCursor(0, 1);
-//  lcd.print("Connected to WiFi!");
+  display.setCursor(0, 10);
+  display.print("Connected to WiFi!");
+  display.display(); 
 
   // Setup MQTT client
   mqttClient.setServer(mqtt_server, mqtt_port);
@@ -91,6 +89,8 @@ void loop() {
     reconnectMQTT();
   }
   mqttClient.loop();
+
+  display.clearDisplay();
 
   // Read the data from the sensor
   float voltage = pzem.voltage();
@@ -111,8 +111,8 @@ void loop() {
     isnan(pf)
   ) {
     Serial.println("Error reading sensor data");
-//    lcd.setCursor(0, 1);
-//    lcd.print("Error reading sensor data.");
+    display.setCursor(0, 0);
+    display.print("Error reading sensor data.");
   } else {
     // Format data as a JSON string
     String payload = String("{\"voltage\":") + voltage +
@@ -136,36 +136,45 @@ void loop() {
     Serial.print("PF: ");       Serial.print(pf);         Serial.print("\t");
     Serial.print("Cost: € ");   Serial.println(cost, 2);  Serial.print("\t");
 
-//    lcd.setCursor(0, 0);
-    lcdString = String(power, 2) + "W ";
-    lcdString += String(energy, 2) + "kWh   ";
-//    lcd.print(lcdString);
+    display.setCursor(0, 0);
+    displayString = String(power, 2) + "W";
+    displayString += (power > 10) ? "   " : "    ";  // pad spaces depending on length
+    displayString += String(energy, 2) + "kWh";
+    display.print(displayString);
 
-//    lcd.setCursor(0, 1);
-    lcdString = String(current, 2) + "A ";
-    lcdString +=  "$" + String(cost, 2);
-    lcdString +=  " " + String(pf, 2);
-//    lcd.print(lcdString);
+    display.setCursor(0, 10);
+    displayString = String(current, 2) + "A    ";
+    displayString +=  "$" + String(cost, 2);
+    display.print(displayString);
+
+    display.setCursor(0, 20); 
+    display.print(String(pf, 2));
   }
+  display.display();
   delay(50);
   digitalWrite(LED_BUILTIN_OVERRIDE, HIGH);
-  delay(200);
+  delay(400);
 }
 
 void reconnectMQTT() {
+  display.clearDisplay();
+  display.display();
   while (!mqttClient.connected()) {
-//    lcd.clear();
-//    lcd.setCursor(0, 0);
-    Serial.print("Attempting MQTT connection...");
-//    lcd.print("Attempting MQTT connection...");
-//    lcd.setCursor(0, 1);
+    Serial.print("Connect MQTT");
+    display.setCursor(0, 0);
+    display.print("Connect MQTT");
+    display.display(); 
     if (mqttClient.connect("ArduinoClient")) {
       Serial.println("Connected to MQTT!");
+      display.setCursor(0, 10);
+      display.print("Connected to MQTT!");
+      display.display();
     } else {
       Serial.print("failed, rc=");
       Serial.print(mqttClient.state());
       Serial.println(" try again in 5 seconds");
-      delay(1000);
+      display.print(".");
+      delay(500);
     }
   }
 }
